@@ -1,0 +1,8 @@
+Simulome was developed in a linux/unix environment and requires the following libraries for proper functionality.
+	Python 2.7.2
+	Biopython 1.6.1+
+	BLAST 2.3.0+ 
+
+Please be sure that these packages are installed and included in your $PATH to ensure proper execution of simulome.  
+
+

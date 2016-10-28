@@ -1,0 +1,55 @@
+Simulome takes an existing genome and the corresponding annotation 
+information for that genome and samples a subset of the genes to use 
+as a simulated genome.  Sampling is performed based read length and 
+genes are selected to approximate a normal distribution of read lengths.  
+An initial simulation is created by using these sampled genes in 
+conjunction with non-duplicating intergenic regions, whose properties 
+can be specified by the user.  Once the initial genome is simulated, a 
+variant genome can be simulated to meet desired specifications.  
+Three run modes are available and can be used in any combination to 
+produce variants of the simulated genome containing SNPs, indels, 
+and/or duplicate regions.  Additional optional arguments are available 
+to allow direct control over selection criteria and genomic structure. 
+The resulting simulations will each be provided as a FASTA nucleotide 
+file and a GTF/GFF3 annotation file.
+
+For NGS read simulation, we recommend ART. 
+Simulome has been tested with ART for complete simulation experiments. 
+ART can be found here:
+https://www.niehs.nih.gov/research/resources/software/biostatistics/art/
+
+Simulome expects a nucleotide FASTA file and a corresponding GTF/GFF3 annotation
+file as input.  Examples of valid input files can be found in the ./sample_data/ folder.
+
+
+The following are examples of possible simulations.
+
+    Simulate a genome based on e.coli containing 100 genes, output files to a folder called ecoli_simulation/.
+      
+        python simulome.py -f ecoli_genome.fasta -a ecoli_anno.gtf -o ecoli_simulation -g 100
+
+
+    Simulate a genome based on e.coli containing 500 genes, and a variant of the simulated genome in which each 
+    gene contains 10 SNPs, output to a folder called ecoli_simulation/.
+
+        python simulome.py -f ecoli_genome.fasta -a ecoli_anno.gtf -o ecoli_simulation -g 500 --snp TRUE -s 10
+
+
+    Simulate a genome based on e.coli containing 500 genes, and a variant of the simulated genome in which each 
+    gene contains 10 SNPs that are concentrated in 50 base pair windows, output to a folder called ecoli_simulation/.
+
+        python simulome.py -f ecoli_genome.fasta -a ecoli_anno.gtf -o ecoli_simulation -g 500 --snp TRUE -s 10 -w 50
+
+
+    Simulate a genome based on e.coli containing 100 genes, and a variant of the simulated genome in which each gene 
+    contains an insertion event of length 100, and two deletion events of length 25, output files to a folder called 
+    ecoli_simulation/.
+
+        python simulome.py -f ecoli_genome.fasta -a ecoli_anno.gtf -o ecoli_simulation -g 100 --indel 3 -n 100 -m 25 -d 2
+
+
+    Simulate a genome based on e.coli containing 100 genes, with a variant genome in which each gene contains 5 SNPs, 
+    an insertion of length 500, a deletion of length 100, 10% genome duplication, and random intergenic region lengths. 
+    Output files to a folder called ecoli_simulation/.
+
+        python simulome.py -f ecoli_genome.fasta -a ecoli_anno.gtf -o ecoli_simulation -g 100 --snp TRUE -s 5 --indel 3 -n 500 -m 100 --duplicate TRUE -c 10 
