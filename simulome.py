@@ -22,7 +22,6 @@ import csv
 import copy
 import numpy
 import random
-import time
 from optparse import OptionParser
 from optparse import OptionGroup
 from Bio import SeqIO
@@ -32,7 +31,7 @@ from Bio.Blast.Applications import NcbiblastnCommandline
 from Bio.Blast import NCBIXML
 
 #Defaults for optional parameters.
-desired_gene_count = 10 - 1
+desired_gene_count = 100 - 1
 spacer_length_default = 500
 random_spacer_len = 0
 feature_type = "gene"
@@ -53,7 +52,6 @@ genome_outfile = ""
 gff_outfile = ""
 mut_genome_outfile = ""
 mut_gff_outfile = ""
-start_time = time.time()
 
 ##############
 # writeGenome:  This function will write a provided annotation file and genome file. 
@@ -173,19 +171,14 @@ def randomSpacer(spacerLen, curGenome):
     if isVerbose == 2:
         print "Simulating intergenic region.\n\tCurrent position at: " + str(len(curGenomeString.join(curGenome)))
     
-    seq1_file = output_dir + "/" + "tmp1.fasta"
-    seq2_file = output_dir + "/" + "tmp2.fasta"
+    seq1_file = output_dir + "/" + "curGenomeSim.fasta"
+    seq2_file = output_dir + "/" + "queryGeneSim.fasta"
     SeqIO.write(seq1, seq1_file, "fasta")
     SeqIO.write(seq2, seq2_file, "fasta")
 
     blastNucOutput = NcbiblastnCommandline(query=seq1_file, subject=seq2_file, outfmt=5)()[0]
     blast_nuc_record = NCBIXML.read(StringIO.StringIO(blastNucOutput))
 
-    #Clean up our temporary files.
-    if os.path.isfile(seq1_file) or os.path.isfile(seq2_file): 
-        os.remove(seq1_file)
-        os.remove(seq2_file)
-	
     alignments = len(blast_nuc_record.alignments)
     if alignments == 0:
         if isVerbose == 2:
@@ -303,7 +296,7 @@ def simulateDelete(curGff, simGenome, delLen, numDels):
 # simulateInsert:  This function simulates insertion events.  It will insert random sequences into genes 
 #                  of the specified length until the number of desired insertion events is reached.  
 #################	
-def simulateInsert(curGff, simGenome, insertLen, numInsertions):
+def simulateInsert(curGff, simGenome, insertLen, numInsertions, isCopyEvent):
     insGenomeString = ""
     insGff = copy.copy(curGff)
     insGffOrig = copy.copy(curGff)
@@ -349,7 +342,14 @@ def simulateInsert(curGff, simGenome, insertLen, numInsertions):
         #Create insertions.
         for j in range(numInsertions):
             insertPos = random.randint(0, origGeneLen-1)
-            insertionSeq = getInsertSeq(insertLen)
+            if isCopyEvent == 1:
+                if isVerbose == 2:
+                    print "Copying sequence of length " + str(insertLen) + " randomly from simulated genome."
+					
+                copyStart = random.randint(1, len(insGenomeString.join(simGenome))-(insertLen+1))
+                insertionSeq = insGenomeString.join(insGenome)[copyStart:copyStart+insertLen]
+            else:
+                insertionSeq = getInsertSeq(insertLen)
             newSeq = newSeq[:insertPos] + insertionSeq + newSeq[insertPos:]
             curAddedLength = curAddedLength + insertLen
 		
@@ -390,6 +390,7 @@ def simulateInsert(curGff, simGenome, insertLen, numInsertions):
 
     return [insGff, newInsGenome]
 
+	
 ##############
 # simulateSNP:  This function simulates SNPs.  A window is selected and random positions in the window are mutated until the 
 #               desired number of SNPs is properly simulated.  If the window size exceeds the gene size, window size is set equal
@@ -435,9 +436,9 @@ def simulateSNP(curGff, simGenome, windowLen, numSNP):
         if isVerbose == 2:
             print "WindowLen: " + str(windowLen)
             print "GeneLen: " + str(origGeneLen)
-        if origGeneLen <= windowLen or windowLen == 0:
+        if origGeneLen <= windowLen:
             if isVerbose >= 1:
-                print "Window length set to target gene length."
+                print "Warning: Window length is larger than target gene.  Adjusting window size to gene length."
             resized = 1
             windowLen = origGeneLen
 
@@ -592,6 +593,7 @@ if __name__ == '__main__':
     indelmode.add_option("-2", "--indel", dest="indel_mode", help="Mutated genome will contain insertion/deletion mutations.  [1 = Insertions only; 2 = Deletions only; 3 = Both insertions and deletions.]")
     indelmode.add_option("-n", "--insert_length", dest="ins_len", help="Length of insertion mutations. Required for insertion mode.")
     indelmode.add_option("-i", "--num_insert", dest="num_ins", help="The number of insertions to simulate in each gene. (DEFAULT = 1)")
+    indelmode.add_option("-k", "--isCopyEvent", dest="is_copy_event", help="Insertion sequences will be randomly copied from the other parts of the genome. TRUE/FALSE. (DEFAULT = FALSE)")
     indelmode.add_option("-m", "--delete_length", dest="del_len", help="Length of deletion mutations. Required for deletion mode.")
     indelmode.add_option("-d", "--num_delete", dest="num_del", help="The number of deletions to simulate in each gene. (DEFAULT = 1)")
 
@@ -643,8 +645,6 @@ if __name__ == '__main__':
             if int(options.num_snp) >= int(options.snp_window):
                 print "Number of SNPs must be smaller than SNP window size."
                 sys.exit()
-        else:
-            options.snp_window = 0
     
     #Indel mode user controls.	
     if options.indel_mode:
@@ -667,7 +667,15 @@ if __name__ == '__main__':
                         print "Invalid number of insertions.  Please enter a positive integer."
                         sys.exit()
                 else:
-                    options.num_ins = 1              
+                    options.num_ins = 1 
+                if options.is_copy_event:
+                    if options.is_copy_event.upper() == "TRUE" or options.is_copy_event.upper() == "FALSE":
+                        if options.is_copy_event.upper() == "TRUE":
+                            options.is_copy_event = 1
+                        else:
+                            options.is_copy_event = 0
+                else:
+                    options.is_copy_event = 0
                 run_ins = 1
             if run_indel == 2 or run_indel == 3:
                 if not options.del_len:
@@ -710,7 +718,7 @@ if __name__ == '__main__':
         if int(options.percent_dup) < 1 or int(options.percent_dup) > 100:
             print "Duplication percent must be an integer between 1-100"
             sys.exit()
-        dup_percent = float(options.percent_dup) / 100.0
+        dup_percent = float(options.percent_dup) * 100.0
 
     #Operon option controls.
     if options.operon_level:
@@ -956,8 +964,8 @@ if __name__ == '__main__':
             print "Simulation at " + str(len(seq1.seq)) + " nucleotides and growing..."
             print "GFF at position: " + str(curPos)
 
-        seq1_file = output_dir + "/" + "tmp1.fasta"
-        seq2_file = output_dir + "/" + "tmp2.fasta"
+        seq1_file = output_dir + "/" + "curGenomeSim.fasta"
+        seq2_file = output_dir + "/" + "queryGeneSim.fasta"
         SeqIO.write(seq1, seq1_file, "fasta")
         SeqIO.write(seq2, seq2_file, "fasta")
 
@@ -1025,9 +1033,8 @@ if __name__ == '__main__':
             print "========================END GENE " + str(i) + "=============================="
 
         #Clean up our temporary files.
-        if os.path.isfile(seq1_file) or os.path.isfile(seq2_file):
-            os.remove(seq1_file)
-            os.remove(seq2_file)
+        os.remove(seq1_file)
+        os.remove(seq2_file)
 
     if isVerbose >= 1:
         print "Simulation complete at " + str(len(curGenomeString.join(simulated_genome))) + " nucleotides."
@@ -1043,7 +1050,7 @@ if __name__ == '__main__':
         dupData = simulateDelete(dupData[0], dupData[1], int(options.del_len), int(options.num_del))
         doMutation = 1
     if run_ins == 1:
-        dupData = simulateInsert(dupData[0], dupData[1], int(options.ins_len), int(options.num_ins))
+        dupData = simulateInsert(dupData[0], dupData[1], int(options.ins_len), int(options.num_ins), int(options.is_copy_event))
         doMutation = 1
     if run_snp == 1:
         dupData = simulateSNP(dupData[0], dupData[1], int(options.snp_window), int(options.num_snp))
@@ -1055,5 +1062,5 @@ if __name__ == '__main__':
     if doMutation == 1:
         writeGenome(dupData[0], dupData[1], 1)
 
-    print("Process complete in %s seconds." % (time.time() - start_time))
+    print "Process Complete."
 	
