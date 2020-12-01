@@ -7,10 +7,13 @@ For more information about the usage of Simulome, [see the simulome wiki](https:
 Please cite Simulome if you use it in your research!
 
 ## Requirements
-Python 3.8.5+
-Biopython 1.78+ 
-BLAST 2.10.1+
+- Python >= 3.8.5
+- Biopython >= 1.78 
+- BLAST >= 2.10.1
 
-## Install
+## Installation
+```bash
 conda install -c conda-forge biopython
 conda install -c bioconda blast
+```
+If you are not using an Anaconda environment you can install Biopython with `pip install biopython` and install Blast  with `brew install blast`
