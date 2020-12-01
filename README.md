@@ -11,7 +11,7 @@ Please cite Simulome if you use it in your research!
 - Biopython >= 1.78 
 - BLAST >= 2.10.1
 
-## Installation
+## Installing Requirements
 ```bash
 conda install -c conda-forge biopython
 conda install -c bioconda blast
