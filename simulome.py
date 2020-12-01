@@ -15,7 +15,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 ##############################################################################################################################################
 
-#Version 1.2
+#Version 1.2.1
 
 from io import StringIO
 import sys
@@ -213,7 +213,7 @@ def intergenicSpacer(spacerLen, curGenome):
     SeqIO.write(seq2, seq2_file, "fasta")
 
     blastNucOutput = NcbiblastnCommandline(query=seq1_file, subject=seq2_file, outfmt=5)()[0]
-    blast_nuc_record = NCBIXML.read(StringIO.StringIO(blastNucOutput))
+    blast_nuc_record = NCBIXML.read(StringIO(blastNucOutput))
 
     alignments = len(blast_nuc_record.alignments)
     if alignments == 0:
@@ -274,7 +274,7 @@ def randomSpacer(spacerLen, curGenome):
     SeqIO.write(seq2, seq2_file, "fasta")
 
     blastNucOutput = NcbiblastnCommandline(query=seq1_file, subject=seq2_file, outfmt=5)()[0]
-    blast_nuc_record = NCBIXML.read(StringIO.StringIO(blastNucOutput))
+    blast_nuc_record = NCBIXML.read(StringIO(blastNucOutput))
 
     alignments = len(blast_nuc_record.alignments)
     if alignments == 0:
@@ -297,7 +297,6 @@ def randomSpacer(spacerLen, curGenome):
             curGenome.append(str(spacer))
 
     return curGenome
-
 
 #################
 # simulateDelete_WG:  This function simulates deletion events for whole genomes.  It will delete random sequences into genes 
@@ -1137,7 +1136,7 @@ def mutateSynonymous_WG(curGff, simGenome, synPercent, numMut, std_dev=-1):
                     #Make non-synonymous mutations.
                     nonSynMut = protSeq[protMutatePos]
                     while nonSynMut == protSeq[protMutatePos]:
-                        nonSynMut = random.choice(mut_table.keys())
+                        nonSynMut = random.choice(list(mut_table.keys()))
 
                     numPossibleNonSynMuts = len(mut_table[nonSynMut])
                     randomCodon = random.randint(0,numPossibleNonSynMuts-1)
@@ -1305,7 +1304,7 @@ def mutateSynonymous(curGff, simGenome, synPercent, numMut, std_dev=-1):
                     #Make non-synonymous mutations.
                     nonSynMut = protSeq[protMutatePos]
                     while nonSynMut == protSeq[protMutatePos]:
-                        nonSynMut = random.choice(mut_table.keys())
+                        nonSynMut = random.choice(list(mut_table.keys()))
 
                     numPossibleNonSynMuts = len(mut_table[nonSynMut])
                     randomCodon = random.randint(0,numPossibleNonSynMuts-1)
@@ -1685,7 +1684,7 @@ if __name__ == '__main__':
             if not options.syn_mean.isdigit() or not options.syn_std_dev.isdigit():
                 print("Mean number of mutations and standard deviation for synonymous/nonsynonymous variant mode must be integers.")
                 sys.exit()
-            if options.syn_mean < 0 or options.syn_std_dev < 1:
+            if int(options.syn_mean) < 0 or int(options.syn_std_dev) < 1:
                 print("Mean number of mutations and standard deviation for synonymous/nonsynonymous variant mode must be greater than 0 and 1 respectively.")
                 sys.exit()
 
@@ -2124,7 +2123,7 @@ if __name__ == '__main__':
             SeqIO.write(seq2, seq2_file, "fasta")
 
             blastNucOutput = NcbiblastnCommandline(query=seq1_file, subject=seq2_file, outfmt=5)()[0]
-            blast_nuc_record = NCBIXML.read(StringIO.StringIO(blastNucOutput))
+            blast_nuc_record = NCBIXML.read(StringIO(blastNucOutput))
 
             #Check if the user is okay with duplicated regions, and grow the simulation accordingly.
             alignments = len(blast_nuc_record.alignments)
