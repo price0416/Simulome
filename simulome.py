@@ -133,7 +133,7 @@ def writeGenome(targetGff, targetGenome, isMut):
         curGenomeString = ""
         outfile = open(genome_outfile_location,"w")
         genome = curGenomeString.join(targetGenome)
-        outfile.write(">" + targetGff[anno_header_offset+2][0] + "\n")
+        outfile.write(">" + targetGff[anno_header_offset][0] + "\n")
         outfile.write(genome)
     except Exception,e:
         print "Error writing simulated genome FASTA file."
